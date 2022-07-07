@@ -3,23 +3,23 @@ package com;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Date;
-import java.io.*;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-import java.net.*;
-import java.text.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Date;
+
 
 public class PublicChatWin extends JFrame {
+
     // RightWindow
     // 用户信息
-    private Map user;
+    private Map<String, Object> user;
     // 好友信息
     private List<Map<String, String>> friends;
     // 好友Label
@@ -42,11 +42,12 @@ public class PublicChatWin extends JFrame {
 
     // 获得当前屏幕的宽
     private double screenWidth = Toolkit.getDefaultToolkit().getScreenSize().getWidth();
-    // 登录窗口宽和高
+    // 公聊窗口宽和高
     private int frameWidth = 260;
     private int frameHeight = 600;
 
-    public PublicChatWin(Map user) {
+
+    public PublicChatWin(Map<String, Object> user) {
 
         // 初始化成员变量
         this.user = user;
@@ -78,21 +79,12 @@ public class PublicChatWin extends JFrame {
             // 单击窗口关闭按钮时调用
             public void windowClosing(WindowEvent e) {
 
-                // 当前用户下线
+                // 通知服务器当前用户下线
                 JSONObject jsonObj = new JSONObject();
                 jsonObj.put("command", Client.COMMAND_LOGOUT);
                 jsonObj.put("user_id", userId);
                 byte[] b = jsonObj.toString().getBytes();
-
-                InetAddress address;
-                try {
-                    address = InetAddress.getByName(Client.SERVER_IP);
-                    // 创建DatagramPacket对象
-                    DatagramPacket packet = new DatagramPacket(b, b.length, address, Client.SERVER_PORT);
-                    // 发送
-                    Client.socket.send(packet);
-                } catch (IOException e1) {
-                }
+                Client.sendToServer(b);
 
                 // 退出系统
                 System.exit(0);
@@ -163,13 +155,9 @@ public class PublicChatWin extends JFrame {
                     lblFriend.addMouseListener(new MouseAdapter() {
                         @Override
                         public void mouseClicked(MouseEvent e) {
-                            // 用户图标双击鼠标时显示对话框
+                            // 用户图标双击鼠标时显示私聊窗口
                             if (e.getClickCount() == 2) {
-                                // TODO
-                                // PrivateChatWin chatFrame = new PrivateChatWin(FriendsFrame.this, user,
-                                // friend);
-                                // chatFrame.setVisible(true);
-                                // isRunning = false;
+
                                 new PrivateChatWin(user, friend).setVisible(true);
                             }
                         }
@@ -244,18 +232,11 @@ public class PublicChatWin extends JFrame {
                         JSONObject jObj = new JSONObject();
                         jObj.put("message", info);// body
                         jObj.put("command", Client.COMMAND_TXTBROADCAST);// head
-
+                        byte[] b = jObj.toString().getBytes();
+                        
                         // 交给服务器广播
-                        try {
-                            InetAddress address = InetAddress.getByName(Client.SERVER_IP);
-                            byte[] b = jObj.toString().getBytes();
-                            DatagramPacket packet = new DatagramPacket(b, b.length, address, Client.SERVER_PORT);
-                            Client.socket.send(packet);
-
-                        } catch (IOException e1) {
-                            System.out.println("消息广播失败...");
-                            e1.printStackTrace();
-                        }
+                        Client.sendToServer(b);
+                        
                     }
 
                     txtInfo.setText("");
@@ -267,21 +248,17 @@ public class PublicChatWin extends JFrame {
     }
     
     class SharePanel extends JPanel {
+
         SharePanel() {
+
             setLayout(new BorderLayout());
 
-            // // Server信息
-            // JLabel lblLabel = new JLabel("Server/Teacher");
-            // // lblLabel.setHorizontalAlignment(SwingConstants.CENTER);
-            // // TODO
-            // add(lblLabel, BorderLayout.NORTH);
-
-            // // Users信息
             drawPanel = new DrawPanel();
             add(drawPanel, BorderLayout.CENTER);
         }
 
         class DrawPanel extends JPanel {
+
             public void paint(Graphics g) {
 
                 if (jsonObjDraw.isEmpty()) {
@@ -305,17 +282,15 @@ public class PublicChatWin extends JFrame {
                         System.out.println(x[i] + "," + y[i]);
                     }
                     g.drawPolyline(x, y, size);
-
                 }
+            }
 
         }
-        
-        
-            
 
-        }
     }
 
+    // ============================公聊窗的数据守护进程===============================
+    // 1. 右侧 用户更新
     private class rightThread implements Runnable {
         @Override
         public void run() {
@@ -329,7 +304,7 @@ public class PublicChatWin extends JFrame {
                     String online = (String) jsonObj.get("online");
 
                     for (JLabel lblFriend : lblFriendList) {
-                        // 判断用户Id是否一致
+
                         if (userId.equals(lblFriend.getToolTipText())) {
                             if (online.equals(Client.ONLINE)) {
                                 lblFriend.setEnabled(true);
@@ -346,7 +321,7 @@ public class PublicChatWin extends JFrame {
         }
     }
 
-   
+    // 2. 中间 公聊内容更新
     private class middleThread implements Runnable {
         @Override
         public void run() {
@@ -354,7 +329,7 @@ public class PublicChatWin extends JFrame {
                 try {
                     JSONObject jsonObj = Client.dataTxtForALL.read();
 
-                    System.out.println("当前线程：" + Thread.currentThread().getName()); 
+                    System.out.println("当前线程：" + Thread.currentThread().getName());
 
                     String info = (String) jsonObj.get("message");
 
@@ -370,6 +345,7 @@ public class PublicChatWin extends JFrame {
         }
     }
 
+    // 3. 左侧 画板内容更新
     private class leftThread implements Runnable {
         @Override
         public void run() {
@@ -390,6 +366,7 @@ public class PublicChatWin extends JFrame {
         }
     }
     
+    // 4. 接收文件
     private class fileThread implements Runnable {
         @Override
         public void run() {
@@ -404,17 +381,12 @@ public class PublicChatWin extends JFrame {
                     int size = bArray.length();
                     byte[] buffer = new byte[size];
                     for (int i = 0; i < size; i++) {
-                        buffer[i] = (byte)( ( (int)bArray.get(i) ) & 0xFF)  ;
-                        System.out.println(buffer[i]);
+                        buffer[i] = (byte) (((int) bArray.get(i)) & 0xFF);
+                        // System.out.println(buffer[i]);
                     }
-                    try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream("./src/file/"+fileName))) {
-                        out.write(buffer);
-                    } catch (IOException e) {
-                        System.out.println("文件写入失败...");
-                        e.printStackTrace();
-                    }
-
                     
+                    Client.saveToFile(buffer, fileName);
+
 
                 } catch (InterruptedException e) {
                     System.out.println(Thread.currentThread().getName() + "线程出错");

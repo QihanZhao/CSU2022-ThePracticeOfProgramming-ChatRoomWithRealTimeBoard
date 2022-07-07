@@ -1,6 +1,8 @@
 import java.sql.*;
 import java.util.*;
 
+import com.DBOpe;
+
 public class App {
     public static void main(String[] args) {
         // try {
@@ -33,7 +35,7 @@ public class App {
         String sql = "select user_id, user_pwd, user_name, user_icon from user";
 
         try ( // 2.创建数据库连接
-                Connection conn = DB.getConnection();
+                Connection conn = DBOpe.getConnection();
                 // 3. 创建语句对象
                 PreparedStatement pstm = conn.prepareStatement(sql);
                 // 4. 执行查询

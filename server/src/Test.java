@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.Server;
+
 public class Test {
     public static void main(String[] args) {
         ArrayList<Integer> xPoints = new ArrayList<Integer>();
