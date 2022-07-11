@@ -33,7 +33,8 @@ public class PublicChatWin extends JFrame {
     // 消息日志( 是查看文本区的冗余信息 )
     private StringBuffer infoLog;
     // 日期格式
-    private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    // private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
 
     // LeftWindow
     // private SharePanel.DrawPanel drawPanel;
@@ -91,9 +92,9 @@ public class PublicChatWin extends JFrame {
             }
         });
 
-        new Thread(new leftThread()).start();
-        new Thread(new middleThread()).start();
-        new Thread(new rightThread()).start();
+        new Thread(new drawThread()).start();
+        new Thread(new publicTxtThread()).start();
+        new Thread(new friendStateThread()).start();
         new Thread(new fileThread()).start();
         
 
@@ -101,15 +102,16 @@ public class PublicChatWin extends JFrame {
     
     class InfoPanel extends JPanel {
         InfoPanel() {
-            setLayout(new BorderLayout());
-
+            setLayout(new BorderLayout(0,10));
+            
+            // User信息
             String userName = (String) user.get("user_name");
             String userIcon = (String) user.get("user_icon");
-
-            // User信息
+            
             JLabel lblLabel = new JLabel(userName);
             lblLabel.setHorizontalAlignment(SwingConstants.CENTER);
-            // TODO
+            String iconFile = String.format("./src/images/%s.jpg", userIcon);
+            lblLabel.setIcon(new ImageIcon(iconFile));
             add(lblLabel, BorderLayout.NORTH);
 
             // Friends信息
@@ -121,7 +123,7 @@ public class PublicChatWin extends JFrame {
             FriendsPanel() {
                 setLayout(new BorderLayout(0, 0));
 
-                JLabel label = new JLabel("我的好友");
+                JLabel label = new JLabel("——————我的好友———————");
                 label.setHorizontalAlignment(SwingConstants.CENTER);
                 add(label, BorderLayout.NORTH);
 
@@ -141,8 +143,9 @@ public class PublicChatWin extends JFrame {
 
                     // 生成每个好友的label
                     JLabel lblFriend = new JLabel(friendUserName);
+                    String iconFile = String.format("./src/images/%s.jpg", friendUserIcon);
+                    lblFriend.setIcon(new ImageIcon(iconFile));
                     lblFriend.setToolTipText(friendUserId);
-                    // TODO // lblFriend.setIcon(null);
 
                     // 根据在线情况，设置可用/不可用
                     if (friendUserOnline.equals(Client.OFFLINE)) {
@@ -289,14 +292,15 @@ public class PublicChatWin extends JFrame {
 
     }
 
-    // ============================公聊窗的数据守护进程===============================
+    // ============================公聊窗的数据守候线程===============================
     // 1. 右侧 用户更新
-    private class rightThread implements Runnable {
+    private class friendStateThread implements Runnable {
         @Override
         public void run() {
             while (true) {
                 try {
-                    JSONObject jsonObj = Client.dataToRefreshFriendList.read();
+                    // JSONObject jsonObj = Client.dataToRefreshFriendList.read();
+                    JSONObject jsonObj = Buffer.readFrom(Buffer.dataToRefreshFriendList);
 
                     System.out.println("当前线程：" + Thread.currentThread().getName());
 
@@ -322,12 +326,13 @@ public class PublicChatWin extends JFrame {
     }
 
     // 2. 中间 公聊内容更新
-    private class middleThread implements Runnable {
+    private class publicTxtThread implements Runnable {
         @Override
         public void run() {
             while (true) {
                 try {
-                    JSONObject jsonObj = Client.dataTxtForALL.read();
+                    JSONObject jsonObj = Buffer.readFrom(Buffer.dataTxtForALL);
+                    // JSONObject jsonObj = Client.dataTxtForALL.read();
 
                     System.out.println("当前线程：" + Thread.currentThread().getName());
 
@@ -346,13 +351,13 @@ public class PublicChatWin extends JFrame {
     }
 
     // 3. 左侧 画板内容更新
-    private class leftThread implements Runnable {
+    private class drawThread implements Runnable {
         @Override
         public void run() {
             while (true) {
                 try {
                     // System.out.println(Client.dataDrawForALL.read());
-                    jsonObjDraw = Client.dataDrawForALL.read();
+                    jsonObjDraw = Buffer.readFrom(Buffer.dataDrawForALL);
 
                     System.out.println("当前线程：" + Thread.currentThread().getName());
 
@@ -372,7 +377,8 @@ public class PublicChatWin extends JFrame {
         public void run() {
             while (true) {
                 try {
-                    JSONObject jsonObj = Client.dataFileForALL.read();
+                    // JSONObject jsonObj = Client.dataFileForALL.read();
+                    JSONObject jsonObj = Buffer.readFrom(Buffer.dataFileForALL);
 
                     System.out.println("当前线程：" + Thread.currentThread().getName());
 

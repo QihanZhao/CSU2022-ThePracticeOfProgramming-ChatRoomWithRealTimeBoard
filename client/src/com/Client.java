@@ -11,16 +11,16 @@ import java.util.Map;
 import javax.swing.JOptionPane;
 
 
-public class Client implements Runnable {
+public class Client {
 
     // ============================客户端的静态信息，以及运行时维护的动态信息===============================
     // 协议的控制字段
     public static final int COMMAND_LOGIN = 101; // 登录命令
     public static final int COMMAND_LOGOUT = 100; // 注销命令
-    public static final int COMMAND_SENDMSG = 333; // 发消息命令
-    public static final int COMMAND_TXTBROADCAST = 222; // 广播消息命令
-    public static final int COMMAND_DRAWBROADCAST = 666; // 广播图像命令
-    public static final int COMMAND_FILEBROADCAST = 777; // 广播文件命令
+    public static final int COMMAND_SENDMSG = 333; // 发送私聊消息命令
+    public static final int COMMAND_TXTBROADCAST = 222; // 广播公聊消息命令
+    public static final int COMMAND_DRAWBROADCAST = 666; // 共享白板图像命令
+    public static final int COMMAND_FILEBROADCAST = 777; // 共享文件命令
     public static final int COMMAND_QUIT = 444; // 强制下线命令
     public static final int COMMAND_STATE = 555;
     public static final int LOGIN_SUCCESS = 001;
@@ -35,75 +35,14 @@ public class Client implements Runnable {
     // UDP套接字
     public static DatagramSocket socket;
 
-    // 从服务器接收到的缓存
-    public byte[] buffer = new byte[1024];
-    // 根据情况放置到不同的安区域里
-    public static Data dataToRefreshFriendList;
-    public static Data dataToRefreshTxtMain;
-    public static Data dataTxtForALL;
-    public static Data dataDrawForALL;
-    public static Data dataFileForALL;
-
-
-    // ============================客户端的运行体，本质是一个解析器parser===============================
-    @Override
-    public void run() {
-        dataToRefreshFriendList = new Data();
-        dataToRefreshTxtMain = new Data();
-        dataTxtForALL = new Data();
-        dataDrawForALL = new Data();
-        dataFileForALL = new Data();
-
-        while (true) {
-            try {
-                // 接收数据
-                InetAddress address = InetAddress.getByName(Client.SERVER_IP);
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, Client.SERVER_PORT);
-                Client.socket.receive(packet);
-
-                // 转换为str
-                int len = packet.getLength(); // 接收数据的长度
-                String str = new String(buffer, 0, len);
-                System.out.printf("从服务器接收的数据： %s\n", str);
-
-                // 转换为json
-                JSONObject jsonObj = new JSONObject(str);
-
-                int cmd = (int) jsonObj.get("command");
-                if (cmd == Client.COMMAND_STATE) {
-
-                    dataToRefreshFriendList.write(jsonObj);
-
-                } else if (cmd == Client.COMMAND_SENDMSG) {
-
-                    dataToRefreshTxtMain.write(jsonObj);
-
-                } else if (cmd == Client.COMMAND_QUIT) {
-                    // 消息对话框
-                    JOptionPane.showMessageDialog(null, "您被强制下线！", "消息提示", JOptionPane.WARNING_MESSAGE);
-
-                } else if (cmd == Client.COMMAND_TXTBROADCAST) {
-
-                    dataTxtForALL.write(jsonObj);
-
-                } else if (cmd == Client.COMMAND_DRAWBROADCAST) {
-
-                    dataDrawForALL.write(jsonObj);
-
-                } else if (cmd == COMMAND_FILEBROADCAST) {
-
-                    dataFileForALL.write(jsonObj);
-                }
-
-            } catch (Exception e) {
-            }
-        }
-    }
     
+
+    // 动态数据 Buffer.java
+
     // ============================客户端的工具库util===============================
-    // ============================供控制面板ControlWin调用
+    // ============================供用户视窗调用
     // 客户端向服务器发送登录请求
-    public static Map<String, Object> login(String userId, String password) {
+    static Map<String, Object> login(String userId, String password) {
         // 准备一个缓冲区
         byte[] buffer = new byte[1024];
         InetAddress address;
@@ -165,7 +104,6 @@ public class Client implements Runnable {
         }
     }
 
-
     // ============================客户端启动器===============================
     // Tip：在身份验证成功之后，才会开启客户端运行体
     public static void main(String[] args) {
@@ -184,4 +122,64 @@ public class Client implements Runnable {
         new LoginWin().setVisible(true);
     }
 
+}
+
+// ============================客户端的运行体，本质是一个解析器parser===============================
+class ClientRunner implements Runnable {
+
+    // 从服务器接收到的缓存
+    byte[] buffer = new byte[1024]; // 每一个*进程*只需要一个buffer，所以可以设置为静态变量
+
+    @Override
+    public void run() {
+
+        while (true) {
+            try {
+                // 接收数据
+                InetAddress address = InetAddress.getByName(Client.SERVER_IP);
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, Client.SERVER_PORT);
+                Client.socket.receive(packet);
+
+                // 转换为str
+                int len = packet.getLength(); // 接收数据的长度
+                String str = new String(buffer, 0, len);
+                System.out.printf("从服务器接收的数据： %s\n", str);
+
+                // 转换为json
+                JSONObject jsonObj = new JSONObject(str);
+
+                int cmd = (int) jsonObj.get("command");
+                if (cmd == Client.COMMAND_STATE) {
+
+                    Buffer.writeTo(Buffer.dataToRefreshFriendList, jsonObj);
+
+                } else if (cmd == Client.COMMAND_SENDMSG) {
+
+                    Buffer.writeTo(Buffer.dataToRefreshTxtMain, jsonObj);
+                    // dataToRefreshTxtMain.write(jsonObj);
+
+                } else if (cmd == Client.COMMAND_QUIT) {
+                    // 消息对话框
+                    JOptionPane.showMessageDialog(null, "您被强制下线！", "消息提示", JOptionPane.WARNING_MESSAGE);
+
+                } else if (cmd == Client.COMMAND_TXTBROADCAST) {
+
+                    Buffer.writeTo(Buffer.dataTxtForALL, jsonObj);
+                    // dataTxtForALL.write(jsonObj);
+
+                } else if (cmd == Client.COMMAND_DRAWBROADCAST) {
+
+                    Buffer.writeTo(Buffer.dataDrawForALL, jsonObj);
+                    // dataDrawForALL.write(jsonObj);
+
+                } else if (cmd == Client.COMMAND_FILEBROADCAST) {
+
+                    Buffer.writeTo(Buffer.dataFileForALL, jsonObj);
+                    // dataFileForALL.write(jsonObj);
+                }
+
+            } catch (Exception e) {
+            }
+        }
+    }
 }

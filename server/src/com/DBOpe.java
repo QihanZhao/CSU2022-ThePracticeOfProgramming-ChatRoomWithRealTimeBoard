@@ -7,12 +7,12 @@ import java.util.*;
 public class DBOpe {
     
     // 连接数据库url
-    static String url = "jdbc:mysql://mysql.sqlpub.com:3306/chatroom?serverTimezone=UTC";
-    static String user = "hanxdb";
-    static String password = "63ad30bb62e1ac95";
-    // static String url = "jdbc:mysql://localhost:3306/chatroom?serverTimezone=UTC";
-    // static String user = "root";
-    // static String password = "12345";
+    // static String url = "jdbc:mysql://mysql.sqlpub.com:3306/chatroom?serverTimezone=UTC";
+    // static String user = "hanxdb";
+    // static String password = "63ad30bb62e1ac95";
+    static String url = "jdbc:mysql://localhost:3306/chatroom?serverTimezone=UTC";
+    static String user = "root";
+    static String password = "12345";
 
 
     // 1.驱动程序加载

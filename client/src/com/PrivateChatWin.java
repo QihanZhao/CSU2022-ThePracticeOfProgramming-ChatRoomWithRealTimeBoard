@@ -30,7 +30,8 @@ public class PrivateChatWin extends JFrame{
     private StringBuffer infoLog;
 
     // 日期格式
-    private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    // private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
 
     // 获得当前屏幕的高和宽
     private double screenHeight = Toolkit.getDefaultToolkit().getScreenSize().getHeight();
@@ -43,11 +44,10 @@ public class PrivateChatWin extends JFrame{
     public PrivateChatWin(Map<String, Object> user, Map<String, String> friend) {
 
         this.userId = (String) user.get("user_id");
-        // TODO // String userIcon = user.get("user_icon");
+        // String userIcon = (String) user.get("user_icon");
         this.friendUserId = friend.get("user_id");
         this.friendUserName = friend.get("user_name");
         this.infoLog = new StringBuffer();
-
 
         /// 初始化当前Frame
         setSize(frameWidth, frameHeight);   // 设置Frame大小
@@ -55,13 +55,15 @@ public class PrivateChatWin extends JFrame{
         int y = (int) (screenHeight - frameHeight) / 2;
         setLocation(x, y); // 设置Frame位于屏幕中心
         setTitle(String.format("与%s聊天中...", friendUserName));
+        String iconFile = String.format("./src/images/%s.jpg", friend.get("user_icon"));
+        setIconImage(Toolkit.getDefaultToolkit().getImage(iconFile));
         setResizable(false);
         getContentPane().setLayout(null);
 
         // 添加查看面板
-        getContentPane().add(new PanLine1());
+        getContentPane().add(new LogPan());
         // 添加发送面板
-        getContentPane().add(new PanLine2());
+        getContentPane().add(new InputPan());
 
         // 注册窗口事件
         addWindowListener(new WindowAdapter() {
@@ -75,10 +77,10 @@ public class PrivateChatWin extends JFrame{
 
     }
     
-    // 函数：生成查看面板
-    class PanLine1 extends JPanel  {
+    // 内部类：生成查看面板
+    class LogPan extends JPanel  {
 
-        PanLine1() {
+        LogPan() {
             setLayout(null);
             setBounds(new Rectangle(5, 5, 330, 210));
             setBorder(BorderFactory.createLineBorder(Color.blue, 1));
@@ -94,14 +96,14 @@ public class PrivateChatWin extends JFrame{
 
     }
 
-    // 函数：生成发送面板
-    class PanLine2 extends JPanel {
+    // 内部类：生成发送面板
+    class InputPan extends JPanel {
 
-        PanLine2() {
+        InputPan() {
             setLayout(null);
             setBounds(5, 220, 330, 50);
             setBorder(BorderFactory.createLineBorder(Color.blue, 1));
-            
+
             txtInfo = new JTextArea();
             JScrollPane scrollPane = new JScrollPane();
             scrollPane.setBounds(5, 5, 222, 40);
@@ -110,7 +112,7 @@ public class PrivateChatWin extends JFrame{
             add(scrollPane);
             add(getSendButton());
         }
-        
+
         // 函数：生成发送按钮
         private JButton getSendButton() {
 
@@ -150,12 +152,14 @@ public class PrivateChatWin extends JFrame{
 
     }
 
+    // ============================私聊窗的数据守护线程===============================
     private class privateTxtThread implements Runnable {
         @Override
         public void run() {
             while (true) {
                 try {
-                    JSONObject jsonObj = Client.dataToRefreshTxtMain.read();
+                    // JSONObject jsonObj = Client.dataToRefreshTxtMain.read();
+                    JSONObject jsonObj = Buffer.readFrom(Buffer.dataToRefreshTxtMain);
 
                     String message = (String) jsonObj.get("message");
                     String date = dateFormat.format(new Date()); // 获得当前时间，并格式化
@@ -166,7 +170,6 @@ public class PrivateChatWin extends JFrame{
                     txtMainInfo.setCaretPosition(txtMainInfo.getDocument().getLength()); // 将滚动条拉到底部 // 刷新查看区
 
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }

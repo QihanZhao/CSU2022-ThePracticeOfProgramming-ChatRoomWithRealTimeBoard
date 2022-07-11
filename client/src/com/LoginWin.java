@@ -18,23 +18,23 @@ public class LoginWin extends JFrame {
 
     //构造函数
     public LoginWin() {
-
         /// 初始化当前窗口
-
         // =========形式
-        setTitle("QQ登录");
+        setTitle("登录");
         setResizable(false);
         getContentPane().setLayout(null);
         setSize(frameWidth, frameHeight);   // 设置窗口大小
         int x = (int) (screenWidth - frameWidth) / 2;   // 计算窗口位于屏幕中心的坐标
         int y = (int) (screenHeight - frameHeight) / 2;
         setLocation(x, y); // 设置窗口位于屏幕中心
+        getContentPane().setBackground(Color.WHITE);
 
         // =========内容
         // 初始化横幅
         JLabel lbBanner = new JLabel();
-        lbBanner.setBounds(0, 0, 325, 48);
-        lbBanner.setText("Welcome");
+        lbBanner.setIcon(new ImageIcon("./src/images/welcome.jpg"));
+        lbBanner.setBounds(50, 0, 225, 48);
+        // lbBanner.setText("Welcome");
         getContentPane().add(lbBanner);
 
         // 初始化账户面板
@@ -61,7 +61,7 @@ public class LoginWin extends JFrame {
                 System.out.println("登录成功...");
                 this.setVisible(false); 
 
-                new Thread(new Client()).start();   // 启动客户端运行体
+                new Thread(new ClientRunner()).start();   // 启动客户端运行体
 
                 PublicChatWin frame = new PublicChatWin(user);   // 打开公共聊天室界面
                 frame.setVisible(true);
@@ -81,7 +81,6 @@ public class LoginWin extends JFrame {
                 System.exit(0);
             }
         });
-    
     }
     
     class AccountPanel extends JPanel{
@@ -90,7 +89,7 @@ public class LoginWin extends JFrame {
             // =========形式
             setLayout(null);
             setBounds(7, 54, 300, 118);
-            setBorder(BorderFactory.createLineBorder(new Color(102, 153, 255), 1)); // 边框颜色设置为蓝色
+            setBorder(BorderFactory.createLineBorder(Color.ORANGE, 2)); // 边框颜色设置为蓝色
 
             // =========内容
             // 初始化【账号】标签

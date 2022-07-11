@@ -23,8 +23,6 @@ public class ControlWin extends JFrame {
     private int frameHeight = 600;
 
     // RightWindow
-    // 用户信息
-    private static List<Map<String, String>> users;
     // 用户Label
     private static List<JLabel> lblUsersList;
 
@@ -107,7 +105,7 @@ public class ControlWin extends JFrame {
                     Map<String, String> user = users.get(i);
                     String userId = user.get("user_id");
                     String userName = user.get("user_name");
-                    String userIcon = user.get("user_icon");
+                    // String userIcon = user.get("user_icon");
 
                     String state = Server.OFFLINE;
                     for (ClientInfo c : Server.clientList) {
@@ -263,7 +261,7 @@ public class ControlWin extends JFrame {
                 return btSend;
             }
 
-            // 函数：生成发送按钮
+            // 函数：生成发文件按钮
             JButton getSendFileButton() {
 
                 JButton btSend = new JButton("发文件");
@@ -435,10 +433,7 @@ public class ControlWin extends JFrame {
         }
     }
 
-    public static void showTxtOnServer(String info) {
-        infoLog.append(info);
-        txtMainInfo.setText(infoLog.toString());
-    }
+    
 
 
     // ============================控制面板的工具库util，供Server使用===============================
@@ -457,6 +452,12 @@ public class ControlWin extends JFrame {
                 }
             }
         }
+    }
+
+    // 刷新控制面板上的消息区域
+    public static void showTxtOnServer(String info) {
+        infoLog.append(info);
+        txtMainInfo.setText(infoLog.toString());
     }
 
 }
